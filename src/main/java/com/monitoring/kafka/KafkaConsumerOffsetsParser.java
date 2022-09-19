@@ -1,5 +1,6 @@
 package com.monitoring.kafka;
 
+import kafka.common.TopicPartition;
 import kafka.common.OffsetAndMetadata;
 import kafka.coordinator.group.GroupMetadataManager;
 import kafka.coordinator.group.OffsetKey;
@@ -35,7 +36,7 @@ public class KafkaConsumerOffsetsParser {
 		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_BOOTSTRAP_SERVERS);
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "offset-reader");
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, "");
 		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "100");
 		props.put(ConsumerConfig.CLIENT_ID_CONFIG, "Kafka_ConsumerOffsets_Monitor");
@@ -66,6 +67,8 @@ public class KafkaConsumerOffsetsParser {
 								Object groupTopicPartition = offsetKey.key();
 								String formattedValue = String
 										.valueOf(GroupMetadataManager.readOffsetMessageValue(ByteBuffer.wrap(value)));
+								System.out.println(groupTopicPartition)
+								System.out.println(formattedValue)
 								// For print purpose
 
 								ConsumerOffsetDetails detail = new ConsumerOffsetDetails();
