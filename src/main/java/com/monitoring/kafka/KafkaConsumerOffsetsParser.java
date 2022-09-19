@@ -20,6 +20,11 @@ import java.util.Properties;
 
 public class KafkaConsumerOffsetsParser {
 
+    static String KAFKA_BOOTSTRAP_SERVERS = System.getenv("KAFKA_BOOTSTRAP_SERVERS");
+    static String OFFSET_TOPIC = System.getenv("OFFSET_TOPIC_NAME");
+    static String KAFKA_USER = System.getenv("KAFKA_USER");
+    static String KAFKA_PASSWORD = System.getenv("KAFKA_PASSWORD");
+
 	private static KafkaConsumer<byte[], byte[]> consumer;
 	private static final Logger LOGGER = Logger.getLogger(KafkaConsumerOffsetsParser.class);
 
@@ -27,17 +32,20 @@ public class KafkaConsumerOffsetsParser {
 	public static void main(String[] args) {
 
 		Properties props = new Properties();
-		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+		props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA_BOOTSTRAP_SERVERS);
 		props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
-		props.put(ConsumerConfig.GROUP_ID_CONFIG, "offset-consumer");
+		props.put(ConsumerConfig.GROUP_ID_CONFIG, "offset-reader");
 		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
 		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "100");
 		props.put(ConsumerConfig.CLIENT_ID_CONFIG, "Kafka_ConsumerOffsets_Monitor");
 		props.put("exclude.internal.topics", "false");
+        props.put("security.protocol", "SASL_PLAINTEXT");
+        props.put("sasl.mechanism", "SCRAM-SHA-512");
+        props.put("sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + KAFKA_USER + "\" password=\"" + KAFKA_PASSWORD + "\";");
 
 		consumer = new KafkaConsumer<>(props);
-		consumer.subscribe(Arrays.asList("__consumer_offsets"));
+		consumer.subscribe(Arrays.asList(OFFSET_TOPIC));
 
 		while (true) {
 			try {
