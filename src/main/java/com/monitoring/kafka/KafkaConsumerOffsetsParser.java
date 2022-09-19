@@ -1,6 +1,5 @@
 package com.monitoring.kafka;
 
-import kafka.common.TopicPartition;
 import kafka.common.OffsetAndMetadata;
 import kafka.coordinator.group.GroupMetadataManager;
 import kafka.coordinator.group.OffsetKey;
@@ -61,14 +60,12 @@ public class KafkaConsumerOffsetsParser {
 							if (o != null && o instanceof OffsetKey) {
 								OffsetKey offsetKey = (OffsetKey) o;
 								value = consumerRecord.value();
-								OffsetAndMetadata offsetAndMetadata = GroupMetadataManager
-										.readOffsetMessageValue(ByteBuffer.wrap(value));
+								OffsetAndMetadata offsetAndMetadata = GroupMetadataManager.readOffsetMessageValue(ByteBuffer.wrap(value));
 								// For print purpose
 								Object groupTopicPartition = offsetKey.key();
-								String formattedValue = String
-										.valueOf(GroupMetadataManager.readOffsetMessageValue(ByteBuffer.wrap(value)));
-								System.out.println(groupTopicPartition)
-								System.out.println(formattedValue)
+								String formattedValue = String.valueOf(GroupMetadataManager.readOffsetMessageValue(ByteBuffer.wrap(value)));
+								System.out.println(groupTopicPartition);
+								System.out.println(formattedValue);
 								// For print purpose
 
 								ConsumerOffsetDetails detail = new ConsumerOffsetDetails();
