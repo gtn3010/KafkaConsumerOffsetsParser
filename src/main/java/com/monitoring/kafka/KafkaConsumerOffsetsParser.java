@@ -49,6 +49,7 @@ public class KafkaConsumerOffsetsParser {
 
 		while (true) {
 			try {
+                LOGGER.info("Starting");
 				ConsumerRecords<byte[], byte[]> consumerRecords = consumer.poll(100);
 				if (consumerRecords.count() > 0) {
 					consumerRecords.forEach(consumerRecord -> {
