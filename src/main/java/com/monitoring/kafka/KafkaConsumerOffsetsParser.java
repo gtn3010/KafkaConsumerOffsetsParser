@@ -1,7 +1,7 @@
 package com.monitoring.kafka;
 
 import kafka.common.OffsetAndMetadata;
-import kafka.common.TopicPartition;
+import org.apache.kafka.common.TopicPartition;
 import kafka.coordinator.group.GroupMetadataManager;
 import kafka.coordinator.group.OffsetKey;
 import scala.Option;
@@ -25,10 +25,10 @@ public class KafkaConsumerOffsetsParser {
     static String TOPIC_NAME = System.getenv("OFFSET_TOPIC_NAME");
     static String KAFKA_USER = System.getenv("KAFKA_USER");
     static String KAFKA_PASSWORD = System.getenv("KAFKA_PASSWORD");
-    static int PARTITION_NUMBER = System.getenv("PARTITION_NUMBER");
-    static int MESSAGES_POLLING = System.getenv("MESSAGES_POLLING");
-    static int MAX_POLL_RECORDS = System.getenv("MAX_POLL_RECORDS");
-    static int OFFSET_POLL_FROM = System.getenv("OFFSET_POLL_FROM");
+    static int PARTITION_NUMBER = Integer.parseInt(System.getenv("PARTITION_NUMBER"));
+    static int MESSAGES_POLLING = Integer.parseInt(System.getenv("MESSAGES_POLLING"));
+    static int MAX_POLL_RECORDS = Integer.parseInt(System.getenv("MAX_POLL_RECORDS"));
+    static int OFFSET_READ_FROM = Integer.parseInt(System.getenv("OFFSET_POLL_FROM"));
 
 	private static KafkaConsumer<byte[], byte[]> consumer;
 	private static final Logger LOGGER = Logger.getLogger(KafkaConsumerOffsetsParser.class);
@@ -53,10 +53,9 @@ public class KafkaConsumerOffsetsParser {
 		// consumer.subscribe(Arrays.asList(OFFSET_TOPIC));
 
 		TopicPartition partitionToReadFrom = new TopicPartition(TOPIC_NAME, PARTITION_NUMBER);
-        int offsetToReadFrom = OFFSET_POLL_FROM;
         consumer.assign(Arrays.asList(partitionToReadFrom));
         // seek
-        consumer.seek(partitionToReadFrom, offsetToReadFrom);
+        consumer.seek(partitionToReadFrom, OFFSET_READ_FROM);
 
 		while (true) {
 			try {
