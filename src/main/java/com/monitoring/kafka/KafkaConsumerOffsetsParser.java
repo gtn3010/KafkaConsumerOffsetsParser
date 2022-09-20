@@ -1,6 +1,7 @@
 package com.monitoring.kafka;
 
 import kafka.common.OffsetAndMetadata;
+import kafka.common.TopicPartition;
 import kafka.coordinator.group.GroupMetadataManager;
 import kafka.coordinator.group.OffsetKey;
 import scala.Option;
@@ -21,9 +22,13 @@ import java.util.Properties;
 public class KafkaConsumerOffsetsParser {
 
     static String KAFKA_BOOTSTRAP_SERVERS = System.getenv("KAFKA_BOOTSTRAP_SERVERS");
-    static String OFFSET_TOPIC = System.getenv("OFFSET_TOPIC_NAME");
+    static String TOPIC_NAME = System.getenv("OFFSET_TOPIC_NAME");
     static String KAFKA_USER = System.getenv("KAFKA_USER");
     static String KAFKA_PASSWORD = System.getenv("KAFKA_PASSWORD");
+    static int PARTITION_NUMBER = System.getenv("PARTITION_NUMBER");
+    static int MESSAGES_POLLING = System.getenv("MESSAGES_POLLING");
+    static int MAX_POLL_RECORDS = System.getenv("MAX_POLL_RECORDS");
+    static int OFFSET_POLL_FROM = System.getenv("OFFSET_POLL_FROM");
 
 	private static KafkaConsumer<byte[], byte[]> consumer;
 	private static final Logger LOGGER = Logger.getLogger(KafkaConsumerOffsetsParser.class);
@@ -37,7 +42,7 @@ public class KafkaConsumerOffsetsParser {
 		props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class);
 		props.put(ConsumerConfig.GROUP_ID_CONFIG, "");
 		props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "100");
+		props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, MAX_POLL_RECORDS);
 		props.put(ConsumerConfig.CLIENT_ID_CONFIG, "Kafka_ConsumerOffsets_Monitor");
 		props.put("exclude.internal.topics", "false");
         props.put("security.protocol", "SASL_PLAINTEXT");
@@ -45,12 +50,18 @@ public class KafkaConsumerOffsetsParser {
         props.put("sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + KAFKA_USER + "\" password=\"" + KAFKA_PASSWORD + "\";");
 
 		consumer = new KafkaConsumer<>(props);
-		consumer.subscribe(Arrays.asList(OFFSET_TOPIC));
+		// consumer.subscribe(Arrays.asList(OFFSET_TOPIC));
+
+		TopicPartition partitionToReadFrom = new TopicPartition(TOPIC_NAME, PARTITION_NUMBER);
+        int offsetToReadFrom = OFFSET_POLL_FROM;
+        consumer.assign(Arrays.asList(partitionToReadFrom));
+        // seek
+        consumer.seek(partitionToReadFrom, offsetToReadFrom);
 
 		while (true) {
 			try {
-                LOGGER.info("Starting");
-				ConsumerRecords<byte[], byte[]> consumerRecords = consumer.poll(100);
+                LOGGER.info("Starting to consume offset records");
+				ConsumerRecords<byte[], byte[]> consumerRecords = consumer.poll(MESSAGES_POLLING);
 				if (consumerRecords.count() > 0) {
 					consumerRecords.forEach(consumerRecord -> {
 						byte[] key = consumerRecord.key();
