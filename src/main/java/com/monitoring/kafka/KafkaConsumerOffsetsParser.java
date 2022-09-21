@@ -28,7 +28,7 @@ public class KafkaConsumerOffsetsParser {
     static int PARTITION_NUMBER = Integer.parseInt(System.getenv("PARTITION_NUMBER"));
     static int MESSAGES_POLLING = Integer.parseInt(System.getenv("MESSAGES_POLLING"));
     static int MAX_POLL_RECORDS = Integer.parseInt(System.getenv("MAX_POLL_RECORDS"));
-    static int OFFSET_READ_FROM = Integer.parseInt(System.getenv("OFFSET_POLL_FROM"));
+    static int OFFSET_READ_FROM = Integer.parseInt(System.getenv("OFFSET_READ_FROM"));
 
 	private static KafkaConsumer<byte[], byte[]> consumer;
 	private static final Logger LOGGER = Logger.getLogger(KafkaConsumerOffsetsParser.class);
@@ -63,37 +63,48 @@ public class KafkaConsumerOffsetsParser {
 				ConsumerRecords<byte[], byte[]> consumerRecords = consumer.poll(MESSAGES_POLLING);
 				if (consumerRecords.count() > 0) {
 					consumerRecords.forEach(consumerRecord -> {
-						byte[] key = consumerRecord.key();
-						byte[] value;
-						if (key != null) {
-							Object o = GroupMetadataManager.readMessageKey(ByteBuffer.wrap(key));
-							if (o != null && o instanceof OffsetKey) {
-								OffsetKey offsetKey = (OffsetKey) o;
-								value = consumerRecord.value();
-								OffsetAndMetadata offsetAndMetadata = GroupMetadataManager.readOffsetMessageValue(ByteBuffer.wrap(value));
-								// For print purpose
-								Object groupTopicPartition = offsetKey.key();
-								String formattedValue = String.valueOf(GroupMetadataManager.readOffsetMessageValue(ByteBuffer.wrap(value)));
-								System.out.println(groupTopicPartition);
-								System.out.println(formattedValue);
-								// For print purpose
+						if (TOPIC_NAME == "__consumer_offsets") {
+							byte[] key = consumerRecord.key();
+							byte[] value;
+							if (key != null) {
+								Object o = GroupMetadataManager.readMessageKey(ByteBuffer.wrap(key));
+								if (o != null && o instanceof OffsetKey) {
+									OffsetKey offsetKey = (OffsetKey) o;
+									value = consumerRecord.value();
+									OffsetAndMetadata offsetAndMetadata = GroupMetadataManager.readOffsetMessageValue(ByteBuffer.wrap(value));
+									// For print purpose
+									Object groupTopicPartition = offsetKey.key();
+									String formattedValue = String.valueOf(GroupMetadataManager.readOffsetMessageValue(ByteBuffer.wrap(value)));
+									System.out.println(groupTopicPartition);
+									System.out.println(formattedValue);
+									// For print purpose
 
-								ConsumerOffsetDetails detail = new ConsumerOffsetDetails();
-								detail.setTopic(offsetKey.key().topicPartition().topic());
-								detail.setVersion(offsetKey.version());
-								detail.setPartition(offsetKey.key().topicPartition().partition());
-								detail.setOffset(offsetAndMetadata.offset());
-								detail.setMetadata(offsetAndMetadata.metadata());
-								detail.setGroup(offsetKey.key().group());
-								detail.setExpireTimestamp(offsetAndMetadata.expireTimestamp().getOrElse(() -> 0L));
-								detail.setCommitTimestamp(offsetAndMetadata.commitTimestamp());
-
-								ObjectMapper om = new ObjectMapper();
-								try {
-									LOGGER.info(om.writeValueAsString(detail));
-								} catch (JsonProcessingException e) {
-									e.printStackTrace();
+									ConsumerOffsetDetails detail = new ConsumerOffsetDetails();
+									detail.setTopic(offsetKey.key().topicPartition().topic());
+									detail.setVersion(offsetKey.version());
+									detail.setPartition(offsetKey.key().topicPartition().partition());
+									detail.setOffset(offsetAndMetadata.offset());
+									detail.setMetadata(offsetAndMetadata.metadata());
+									detail.setGroup(offsetKey.key().group());
+									detail.setExpireTimestamp(offsetAndMetadata.expireTimestamp().getOrElse(() -> 0L));
+									detail.setCommitTimestamp(offsetAndMetadata.commitTimestamp());
+									ObjectMapper om = new ObjectMapper();
+									try {
+										LOGGER.info(om.writeValueAsString(detail));
+									} catch (JsonProcessingException e) {
+										e.printStackTrace();
+									}
 								}
+							}
+						} else if (TOPIC_NAME.contains("checkpoints.internal")) {
+							Checkpoint record = Checkpoint.deserializeRecord(consumerRecord);
+							if ( record != null ) {
+								LOGGER.info(record.toString());
+							}
+						} else if (TOPIC_NAME.contains("offset-syncs")) {
+							OffsetSync record = OffsetSync.deserializeRecord(consumerRecord);
+							if ( record != null ) {
+								LOGGER.info(record.toString());
 							}
 						}
 					});
@@ -102,7 +113,7 @@ public class KafkaConsumerOffsetsParser {
 				e.printStackTrace();
 			}
 
-			consumer.commitSync();
+			// consumer.commitSync();
 		}
 
 	}
