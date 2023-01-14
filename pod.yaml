@@ -1,0 +1,35 @@
+apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJkb2NrZXItaHViLmctcGF5LnZuIjogeyJ1c2VybmFtZSI6InJlZ2lzdHJ5LXJvIiwicGFzc3dvcmQiOiI2bkRTWlQ3OEppK2ZNQWFFOHR6QiIsImF1dGgiOiJjbVZuYVhOMGNua3RjbTg2Tm01RVUxcFVOemhLYVN0bVRVRmhSVGgwZWtJPSJ9fX0=
+kind: Secret
+metadata:
+  name: docker-registry
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: consumer-offset
+spec:
+  containers:
+  - name: consumer
+    command:
+    - /bin/sh
+    - -c
+    args:
+    - sleep 3600
+    image: "docker-hub.g-pay.vn/platform-applications/kafka-read-offset:v1.0"
+    imagePullPolicy: Always
+    env:
+    - name: KAFKA_BOOTSTRAP_SERVERS
+      value: test-target-kafka-brokers:9092
+    - name: OFFSET_TOPIC_NAME
+      value: "source.checkpoints.internal"
+    - name: KAFKA_USER
+      value: "admin-test-target-user"
+    - name: KAFKA_PASSWORD
+      value: "vfAfPz9HkP3e"
+  securityContext:
+    runAsUser: 0
+  imagePullSecrets:
+  - name: docker-registry
